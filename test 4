@@ -1,0 +1,156 @@
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+
+-- Debug
+local function debugLog(msg)
+    print("[DEBUG] " .. msg)
+end
+
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "ArbixTPGui"
+gui.IgnoreGuiInset = true
+gui.Parent = Player:WaitForChild("PlayerGui")
+
+-- Blur
+local blur = Instance.new("BlurEffect")
+blur.Size = 0
+blur.Parent = workspace
+
+-- Frame
+local isMobile = UserInputService.TouchEnabled
+local frame = Instance.new("Frame")
+frame.Parent = gui
+frame.Size = UDim2.new(0, 0, 0, 0)
+frame.Position = UDim2.new(0.5, 0, 0.5, 0)
+frame.AnchorPoint = Vector2.new(0.5, 0.5)
+frame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+frame.BackgroundTransparency = 1
+
+-- Corners
+local corner = Instance.new("UICorner", frame)
+corner.CornerRadius = UDim.new(0, 12)
+
+-- TitleBar
+local titleBar = Instance.new("Frame", frame)
+titleBar.Size = UDim2.new(1, 0, 0, 30)
+titleBar.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+local titleCorner = Instance.new("UICorner", titleBar)
+titleCorner.CornerRadius = UDim.new(0, 12)
+
+-- Title Text
+local title = Instance.new("TextLabel", titleBar)
+title.Text = "BUENARDOVICH TP"
+title.Font = Enum.Font.GothamBlack
+title.TextSize = isMobile and 12 or 16
+title.TextColor3 = Color3.fromRGB(77, 0, 255)
+title.BackgroundTransparency = 1
+title.Size = UDim2.new(1, -40, 1, 0)
+title.Position = UDim2.new(0, 10, 0, 0)
+title.TextTransparency = 1
+
+-- Close Button
+local closeBtn = Instance.new("TextButton", titleBar)
+closeBtn.Text = "X"
+closeBtn.Size = UDim2.new(0, 20, 0, 20)
+closeBtn.Position = UDim2.new(1, -25, 0.5, -10)
+closeBtn.BackgroundTransparency = 1
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
+closeBtn.TextSize = 14
+closeBtn.TextTransparency = 1
+
+-- Content
+local content = Instance.new("Frame", frame)
+content.Size = UDim2.new(1, 0, 1, -30)
+content.Position = UDim2.new(0, 0, 0, 30)
+content.BackgroundTransparency = 1
+
+-- Test Button
+local testBtn = Instance.new("TextButton", content)
+testBtn.Size = UDim2.new(0.8, 0, 0, 40)
+testBtn.Position = UDim2.new(0.1, 0, 0.2, 0)
+testBtn.Text = "TEST BUTTON"
+testBtn.Font = Enum.Font.GothamSemibold
+testBtn.TextSize = 14
+testBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+testBtn.BackgroundColor3 = Color3.fromRGB(77, 0, 255)
+testBtn.TextTransparency = 1
+testBtn.BackgroundTransparency = 1
+
+Instance.new("UICorner", testBtn).CornerRadius = UDim.new(0, 8)
+local stroke = Instance.new("UIStroke", testBtn)
+stroke.Color = Color3.fromRGB(0, 80, 200)
+stroke.Thickness = 2
+stroke.Transparency = 1
+
+-- Animaciones de entrada
+local finalSize = isMobile and UDim2.new(0.5, 0, 0.35, 0) or UDim2.new(0, 350, 0, 250)
+TweenService:Create(blur, TweenInfo.new(0.5), {Size = 15}):Play()
+TweenService:Create(frame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+    Size = finalSize,
+    BackgroundTransparency = 0
+}):Play()
+
+task.wait(0.4)
+TweenService:Create(title, TweenInfo.new(0.4), {TextTransparency = 0}):Play()
+TweenService:Create(closeBtn, TweenInfo.new(0.4), {TextTransparency = 0}):Play()
+TweenService:Create(testBtn, TweenInfo.new(0.4), {
+    TextTransparency = 0,
+    BackgroundTransparency = 0
+}):Play()
+TweenService:Create(stroke, TweenInfo.new(0.4), {Transparency = 0}):Play()
+
+-- Botón cerrar
+closeBtn.MouseButton1Click:Connect(function()
+    TweenService:Create(frame, TweenInfo.new(0.3), {
+        Size = UDim2.new(0, 0, 0, 0),
+        BackgroundTransparency = 1
+    }):Play()
+    TweenService:Create(blur, TweenInfo.new(0.3), {Size = 0}):Play()
+    task.wait(0.3)
+    gui:Destroy()
+    blur:Destroy()
+end)
+
+-- Función del test button
+testBtn.MouseButton1Click:Connect(function()
+    debugLog("TEST BUTTON PRESSED")
+end)
+
+-- Drag
+local dragging = false
+local dragStart, startPos
+
+local function onStart(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = frame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end
+
+local function onDrag(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        local goal = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+        frame:TweenPosition(goal, Enum.EasingDirection.Out, Enum.EasingStyle.Sine, 0.05, true)
+    end
+end
+
+titleBar.InputBegan:Connect(onStart)
+titleBar.InputChanged:Connect(onDrag)
+
+debugLog("✅ GUI cargada y lista.")
